@@ -1,7 +1,10 @@
 """Configuration — free APIs, rate limits, cache TTL."""
 import os
+from pathlib import Path
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///email_security.db")
+BASE_DIR = Path(__file__).resolve().parent
+DATABASE_PATH = os.getenv("DATABASE_PATH", str(BASE_DIR / "email_security.db"))
+RATELIMIT_PATH = os.getenv("RATELIMIT_PATH", str(BASE_DIR / "ratelimit.db"))
 
 # Rate limits (requests per minute)
 RATE_LIMITS = {
@@ -14,6 +17,7 @@ RATE_LIMITS = {
 
 # Cache TTL in seconds
 CACHE_TTL = {
+    "url": 1800,
     "virustotal": 3600,    # 1h
     "abuseipdb": 1800,     # 30min
     "urlscan": 3600,

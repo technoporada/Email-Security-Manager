@@ -4,11 +4,12 @@ import sqlite3
 import hashlib
 import json
 from typing import Optional
-from config import RATE_LIMITS, CACHE_TTL
+from config import RATE_LIMITS, CACHE_TTL, RATELIMIT_PATH
 
 
 class RateLimiter:
-    def __init__(self, db_path: str = "ratelimit.db"):
+    def __init__(self, db_path: Optional[str] = None):
+        db_path = db_path or RATELIMIT_PATH
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self._init_db()
         self._counters: dict[str, list[float]] = {}

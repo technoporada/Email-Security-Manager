@@ -3,11 +3,12 @@ import sqlite3
 import json
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-from config import DATABASE_URL
+from config import DATABASE_PATH
 
 
 class Database:
-    def __init__(self, db_path: str = "email_security.db"):
+    def __init__(self, db_path: Optional[str] = None):
+        db_path = db_path or DATABASE_PATH
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_db()

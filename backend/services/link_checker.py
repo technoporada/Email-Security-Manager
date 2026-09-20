@@ -11,6 +11,26 @@ limiter = RateLimiter()
 
 
 async def check_url(url: str) -> Dict:
+    parsed = urlparse(url)
+    if parsed.scheme and parsed.scheme not in {"http", "https"}:
+        return {
+            "url": url,
+            "safe": False,
+            "risks": ["Invalid URL scheme"],
+            "verdict": "invalid",
+            "details": {},
+        }
+    if not parsed.scheme:
+        parsed = urlparse(f"http://{url}")
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return {
+            "url": url,
+            "safe": False,
+            "risks": ["Invalid URL"],
+            "verdict": "invalid",
+            "details": {},
+        }
+
     result = {
         "url": url,
         "safe": True,

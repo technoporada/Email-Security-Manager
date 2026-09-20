@@ -8,19 +8,18 @@ import os
 
 from database import Database
 from services.email_parser import parse_headers
-from services.link_checker import check_url
-from services.phone_checker import check_phone
+from services.link_checker import check_url, limiter as link_limiter
+from services.phone_checker import check_phone, limiter as phone_limiter
 from services.abuse_reporter import generate_report, get_all_templates
-from services.rate_limiter import RateLimiter
 
 db = Database()
-limiter = RateLimiter()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-    limiter.cleanup()
+    link_limiter.cleanup()
+    phone_limiter.cleanup()
 
 
 app = FastAPI(
@@ -48,7 +47,9 @@ async def index():
 # === Email Analysis ===
 
 @app.post("/api/email/parse")
-async def api_parse_email(headers: str = Query(..., description="Raw email headers")):
+async def api_parse_email(
+    headers: str = Query(..., min_length=1, max_length=200_000, description="Raw email headers")
+):
     result = parse_headers(headers)
     db.save_scan("email_headers", result.get("from", "unknown"), result, result.get("risk_score", 0))
     return result
@@ -57,8 +58,10 @@ async def api_parse_email(headers: str = Query(..., description="Raw email heade
 # === Link Checking ===
 
 @app.get("/api/link/check")
-async def api_check_link(url: str = Query(..., description="URL to check")):
-    cached = limiter.get_cached("url", url)
+async def api_check_link(
+    url: str = Query(..., min_length=1, max_length=2048, description="URL to check")
+):
+    cached = link_limiter.get_cached("url", url)
     if cached:
         return cached
     result = await check_url(url)
@@ -69,8 +72,11 @@ async def api_check_link(url: str = Query(..., description="URL to check")):
 # === Phone Checking ===
 
 @app.get("/api/phone/check")
-async def api_check_phone(phone: str = Query(..., description="Phone number")):
-    cached = limiter.get_cached("phone", phone)
+async def api_check_phone(
+    phone: str = Query(..., min_length=7, max_length=25, pattern=r"^\+?[0-9\s().-]+$",
+                       description="Phone number")
+):
+    cached = phone_limiter.get_cached("phone", phone)
     if cached:
         return cached
     result = await check_phone(phone)
@@ -93,11 +99,11 @@ async def api_abuse_templates():
 
 @app.post("/api/abuse/generate")
 async def api_generate_abuse_report(
-    report_type: str = Query(...),
-    source_ip: str = Query(""),
-    domain: str = Query(""),
-    url: str = Query(""),
-    evidence: str = Query(""),
+    report_type: str = Query(..., min_length=1, max_length=32),
+    source_ip: str = Query("", max_length=64),
+    domain: str = Query("", max_length=253),
+    url: str = Query("", max_length=2048),
+    evidence: str = Query("", max_length=50_000),
 ):
     result = generate_report(report_type, source_ip, domain, url, evidence)
     if "error" not in result:
@@ -114,9 +120,9 @@ async def api_get_blacklist(entry_type: Optional[str] = None):
 
 @app.post("/api/blacklist/add")
 async def api_add_blacklist(
-    entry_type: str = Query(...),
-    value: str = Query(...),
-    reason: str = Query(""),
+    entry_type: str = Query(..., min_length=1, max_length=32),
+    value: str = Query(..., min_length=1, max_length=512),
+    reason: str = Query("", max_length=2_000),
 ):
     success = db.add_blacklist(entry_type, value, reason)
     return {"success": success, "value": value}
@@ -130,8 +136,8 @@ async def api_remove_blacklist(value: str = Query(...)):
 
 @app.get("/api/blacklist/check")
 async def api_check_blacklist(
-    entry_type: str = Query(...),
-    value: str = Query(...),
+    entry_type: str = Query(..., min_length=1, max_length=32),
+    value: str = Query(..., min_length=1, max_length=512),
 ):
     return {"blacklisted": db.is_blacklisted(entry_type, value)}
 
@@ -139,7 +145,7 @@ async def api_check_blacklist(
 # === History & Stats ===
 
 @app.get("/api/history")
-async def api_history(scan_type: Optional[str] = None, limit: int = 50):
+async def api_history(scan_type: Optional[str] = None, limit: int = Query(50, ge=1, le=500)):
     return db.get_scans(scan_type, limit)
 
 
@@ -154,15 +160,15 @@ async def api_stats():
 async def api_ratelimit_status():
     return {
         "virustotal": {
-            "can_request": limiter.can_request("virustotal"),
-            "wait_seconds": limiter.wait_time("virustotal"),
+            "can_request": link_limiter.can_request("virustotal"),
+            "wait_seconds": link_limiter.wait_time("virustotal"),
         },
         "abuseipdb": {
-            "can_request": limiter.can_request("abuseipdb"),
-            "wait_seconds": limiter.wait_time("abuseipdb"),
+            "can_request": link_limiter.can_request("abuseipdb"),
+            "wait_seconds": link_limiter.wait_time("abuseipdb"),
         },
         "urlscan": {
-            "can_request": limiter.can_request("urlscan"),
-            "wait_seconds": limiter.wait_time("urlscan"),
+            "can_request": link_limiter.can_request("urlscan"),
+            "wait_seconds": link_limiter.wait_time("urlscan"),
         },
     }
