@@ -49,6 +49,19 @@ python app.py
 # → http://127.0.0.1:8000
 ```
 
+### Admin endpoints
+
+History and blacklist operations require an admin token. Set it before starting the
+backend and enter the same token in the web UI:
+
+```bash
+export ADMIN_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+python app.py
+```
+
+The token is sent in the `X-Admin-Token` header. Keep it private; without it the
+sensitive history and blacklist endpoints return `401`/`503`.
+
 ## API Endpoints
 
 | Endpoint | Method | Description |

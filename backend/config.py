@@ -5,6 +5,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE_PATH = os.getenv("DATABASE_PATH", str(BASE_DIR / "email_security.db"))
 RATELIMIT_PATH = os.getenv("RATELIMIT_PATH", str(BASE_DIR / "ratelimit.db"))
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
+BLACKLIST_ENTRY_TYPES = {"ip", "domain", "email", "phone"}
 
 # Rate limits (requests per minute)
 RATE_LIMITS = {

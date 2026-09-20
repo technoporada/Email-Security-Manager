@@ -1,18 +1,27 @@
 """Email Security Manager — FastAPI backend."""
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from typing import Optional
 import os
+import secrets
 
 from database import Database
 from services.email_parser import parse_headers
 from services.link_checker import check_url, limiter as link_limiter
 from services.phone_checker import check_phone, limiter as phone_limiter
 from services.abuse_reporter import generate_report, get_all_templates
+from config import ADMIN_TOKEN, BLACKLIST_ENTRY_TYPES
 
 db = Database()
+
+
+def require_admin_token(x_admin_token: str = Header(default="")) -> None:
+    if not ADMIN_TOKEN:
+        raise HTTPException(status_code=503, detail="Admin access is not configured")
+    if not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Invalid admin token")
 
 
 @asynccontextmanager
@@ -114,7 +123,10 @@ async def api_generate_abuse_report(
 # === Blacklist ===
 
 @app.get("/api/blacklist")
-async def api_get_blacklist(entry_type: Optional[str] = None):
+async def api_get_blacklist(
+    entry_type: Optional[str] = None,
+    _: None = Depends(require_admin_token),
+):
     return db.get_blacklist(entry_type)
 
 
@@ -123,13 +135,19 @@ async def api_add_blacklist(
     entry_type: str = Query(..., min_length=1, max_length=32),
     value: str = Query(..., min_length=1, max_length=512),
     reason: str = Query("", max_length=2_000),
+    _: None = Depends(require_admin_token),
 ):
+    if entry_type not in BLACKLIST_ENTRY_TYPES:
+        raise HTTPException(status_code=422, detail="Unsupported blacklist entry type")
     success = db.add_blacklist(entry_type, value, reason)
     return {"success": success, "value": value}
 
 
 @app.delete("/api/blacklist/remove")
-async def api_remove_blacklist(value: str = Query(...)):
+async def api_remove_blacklist(
+    value: str = Query(..., min_length=1, max_length=512),
+    _: None = Depends(require_admin_token),
+):
     success = db.remove_blacklist(value)
     return {"success": success}
 
@@ -138,14 +156,21 @@ async def api_remove_blacklist(value: str = Query(...)):
 async def api_check_blacklist(
     entry_type: str = Query(..., min_length=1, max_length=32),
     value: str = Query(..., min_length=1, max_length=512),
+    _: None = Depends(require_admin_token),
 ):
+    if entry_type not in BLACKLIST_ENTRY_TYPES:
+        raise HTTPException(status_code=422, detail="Unsupported blacklist entry type")
     return {"blacklisted": db.is_blacklisted(entry_type, value)}
 
 
 # === History & Stats ===
 
 @app.get("/api/history")
-async def api_history(scan_type: Optional[str] = None, limit: int = Query(50, ge=1, le=500)):
+async def api_history(
+    scan_type: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=500),
+    _: None = Depends(require_admin_token),
+):
     return db.get_scans(scan_type, limit)
 
 

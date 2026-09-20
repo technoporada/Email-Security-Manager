@@ -50,6 +50,7 @@
 <div class="container">
     <h1>🛡️ Email Security Manager</h1>
     <p class="subtitle">Threat analysis, link checking, phone scam detection, abuse reporting</p>
+    <input type="password" id="adminToken" placeholder="Admin token for history/blacklist (optional)">
 
     <div class="stats-grid" id="stats"></div>
 
@@ -123,6 +124,22 @@
 
 <script>
 const API = '';
+const ADMIN_TOKEN_KEY = 'email-security-admin-token';
+document.getElementById('adminToken').value = localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+document.getElementById('adminToken').addEventListener('change', (event) => {
+    localStorage.setItem(ADMIN_TOKEN_KEY, event.target.value);
+});
+
+function adminHeaders() {
+    const token = document.getElementById('adminToken').value;
+    return token ? { 'X-Admin-Token': token } : {};
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+}
 
 function showTab(name) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -134,7 +151,7 @@ function showTab(name) {
 function showResult(id, data) {
     const el = document.getElementById(id);
     if (typeof data === 'string') {
-        el.innerHTML = data;
+        el.textContent = data;
     } else {
         el.innerHTML = formatResult(data);
     }
@@ -146,15 +163,15 @@ function formatResult(obj, indent = 0) {
     for (const [key, val] of Object.entries(obj)) {
         if (key === 'risks' && Array.isArray(val)) {
             html += '<div style="margin: 5px 0;"><strong>Risks:</strong><br>';
-            val.forEach(r => html += '<span class="badge badge-danger">' + r + '</span> ');
+            val.forEach(r => html += '<span class="badge badge-danger">' + escapeHTML(r) + '</span> ');
             html += '</div>';
         } else if (key === 'verdict') {
             const cls = val === 'safe' ? 'badge-safe' : val === 'malicious' ? 'badge-danger' : 'badge-warning';
-            html += `<div style="margin: 5px 0;"><span class="badge ${cls}" style="font-size:1em;padding:5px 12px;">${val.toUpperCase()}</span></div>`;
+            html += `<div style="margin: 5px 0;"><span class="badge ${cls}" style="font-size:1em;padding:5px 12px;">${escapeHTML(val).toUpperCase()}</span></div>`;
         } else if (typeof val === 'object' && val !== null) {
-            html += `<div style="margin:5px 0;"><strong>${key}:</strong><div style="margin-left:15px;">${formatResult(val, indent+1)}</div></div>`;
+            html += `<div style="margin:5px 0;"><strong>${escapeHTML(key)}:</strong><div style="margin-left:15px;">${formatResult(val, indent+1)}</div></div>`;
         } else if (val && val !== '' && val !== 0 && val !== false) {
-            html += `<div><strong>${key}:</strong> ${val}</div>`;
+            html += `<div><strong>${escapeHTML(key)}:</strong> ${escapeHTML(val)}</div>`;
         }
     }
     return html;
@@ -219,13 +236,21 @@ async function loadAbuseTemplates() {
         const resp = await fetch(`${API}/api/abuse/templates`);
         const data = await resp.json();
         const el = document.getElementById('abuseTemplates');
-        el.innerHTML = Object.entries(data).map(([key, t]) => `
-            <div class="template-card">
-                <h3>${t.name}</h3>
-                <p style="color:#888;font-size:0.9em;">${t.subject}</p>
-                <button onclick="selectAbuseTemplate('${key}')">Use This Template</button>
-            </div>
-        `).join('');
+        el.replaceChildren();
+        for (const [key, template] of Object.entries(data)) {
+            const card = document.createElement('div');
+            card.className = 'template-card';
+            const name = document.createElement('h3');
+            name.textContent = template.name;
+            const subject = document.createElement('p');
+            subject.style.cssText = 'color:#888;font-size:0.9em;';
+            subject.textContent = template.subject;
+            const button = document.createElement('button');
+            button.textContent = 'Use This Template';
+            button.addEventListener('click', () => selectAbuseTemplate(key));
+            card.append(name, subject, button);
+            el.appendChild(card);
+        }
     } catch (e) {}
 }
 
@@ -263,9 +288,9 @@ async function addBlacklist() {
     const reason = document.getElementById('blReason').value.trim();
     if (!value || !type) { alert('Enter value and type'); return; }
     try {
-        const resp = await fetch(`${API}/api/blacklist/add?entry_type=${type}&value=${encodeURIComponent(value)}&reason=${encodeURIComponent(reason)}`, { method: 'POST' });
+        const resp = await fetch(`${API}/api/blacklist/add?entry_type=${encodeURIComponent(type)}&value=${encodeURIComponent(value)}&reason=${encodeURIComponent(reason)}`, { method: 'POST', headers: adminHeaders() });
         const data = await resp.json();
-        showResult('blacklistResult', data.success ? `✅ Added ${value} to blacklist` : '⚠️ Already exists');
+        showResult('blacklistResult', data.success ? `✅ Added ${value} to blacklist` : (data.detail || '⚠️ Already exists'));
         document.getElementById('blValue').value = '';
     } catch (e) {
         showResult('blacklistResult', '❌ Error: ' + e.message);
@@ -275,8 +300,9 @@ async function addBlacklist() {
 // === History ===
 async function loadHistory() {
     try {
-        const resp = await fetch(`${API}/api/history`);
+        const resp = await fetch(`${API}/api/history`, { headers: adminHeaders() });
         const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || 'History access denied');
         if (data.length === 0) {
             showResult('historyResult', 'No scans yet');
             return;
@@ -292,12 +318,17 @@ async function loadStats() {
     try {
         const resp = await fetch(`${API}/api/stats`);
         const data = await resp.json();
-        document.getElementById('stats').innerHTML = `
-            <div class="stat-card"><div class="stat-num">${data.total_scans}</div><div class="stat-label">Total Scans</div></div>
-            <div class="stat-card"><div class="stat-num">${data.threats_found}</div><div class="stat-label">Threats Found</div></div>
-            <div class="stat-card"><div class="stat-num">${data.blacklisted}</div><div class="stat-label">Blacklisted</div></div>
-            <div class="stat-card"><div class="stat-num">${data.abuse_reports}</div><div class="stat-label">Abuse Reports</div></div>
-        `;
+        const stats = document.getElementById('stats');
+        stats.replaceChildren();
+        for (const [key, label] of Object.entries({
+            total_scans: 'Total Scans', threats_found: 'Threats Found',
+            blacklisted: 'Blacklisted', abuse_reports: 'Abuse Reports'
+        })) {
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+            card.innerHTML = `<div class="stat-num">${escapeHTML(data[key])}</div><div class="stat-label">${label}</div>`;
+            stats.appendChild(card);
+        }
     } catch (e) {}
 }
 
