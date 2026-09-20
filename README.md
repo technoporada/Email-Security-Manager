@@ -7,9 +7,9 @@
 
 **Email threat analysis, link checking, phone scam detection, abuse reporting.**
 
-Free APIs only — no paid keys required. Works without API keys (local analysis), better with free tier keys.
+## ZERO accounts. ZERO API keys. ZERO registration. Works immediately.
 
-> **Keywords:** `email-security` `phishing` `link-checker` `phone-scam` `abuse-report` `osint` `fastapi` `python`
+> **Keywords:** `email-security` `phishing` `link-checker` `phone-scam` `abuse-report` `osint` `fastapi` `python` `no-auth`
 
 ---
 
@@ -26,20 +26,15 @@ Free APIs only — no paid keys required. Works without API keys (local analysis
 
 ## Free APIs Used
 
-| API | Free Tier | Key Required? |
-|-----|-----------|---------------|
-| **VirusTotal** | 500 req/day, 4/min | Yes (free key) |
-| **AbuseIPDB** | 1,000 checks/day | Yes (free key) |
-| **OTX AlienVault** | 10,000 req/hour | Yes (free key) |
-| **ip-api.com** | 45 req/min | No |
-| **Tellows/NieNaDzwoń** | Scraping | No |
+| Source | Method | Auth? |
+|--------|--------|-------|
+| **VirusTotal** | Scraping | None |
+| **AbuseIPDB** | Scraping | None |
+| **OTX AlienVault** | Free API | None |
+| **ip-api.com** | Free API | None |
+| **Tellows/NieNaDzwoń/JakiToNumer** | Scraping | None |
 
-**Without any API keys:** Local analysis still works (suspicious TLDs, URL shorteners, IP detection, header parsing).
-
-Get free keys:
-- VirusTotal: https://www.virustotal.com/gui/my-apikey
-- AbuseIPDB: https://www.abuseipdb.com/account/api
-- OTX: https://otx.alienvault.com/api (Settings → API Integration)
+**ZERO accounts needed. Everything works out of the box.**
 
 ## Quick Start
 
@@ -53,19 +48,6 @@ pip install -r requirements.txt
 python app.py
 # → http://127.0.0.1:8000
 ```
-
-## Optional: API Keys
-
-```bash
-export VIRUSTOTAL_KEY="your-free-key"
-export ABUSEIPDB_KEY="your-free-key"
-export OTX_KEY="your-free-key"  # optional
-```
-
-Get free keys:
-- VirusTotal: https://www.virustotal.com/gui/my-apikey
-- AbuseIPDB: https://www.abuseipdb.com/account/api
-- OTX: https://otx.alienvault.com/api
 
 ## API Endpoints
 
