@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Security Manager</title>
+    <meta name="description" content="Email threat analysis, link checking, phone scam detection, abuse reporting">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #ff4757; margin: 20px 0; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .tab { padding: 10px 20px; border: 1px solid #333; background: #1a1a2e; color: #aaa; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .tab:hover, .tab.active { background: #ff4757; color: #fff; border-color: #ff4757; }
+        .panel { display: none; background: #1a1a2e; border: 1px solid #333; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .panel.active { display: block; }
+        .panel h2 { color: #ff4757; margin-bottom: 15px; }
+        input, textarea { width: 100%; padding: 12px; background: #0a0a0f; border: 1px solid #333; color: #e0e0e0; border-radius: 8px; font-family: inherit; margin-bottom: 10px; }
+        input:focus, textarea:focus { outline: none; border-color: #ff4757; }
+        textarea { min-height: 120px; resize: vertical; }
+        button { padding: 10px 20px; background: #ff4757; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: bold; transition: all 0.3s; }
+        button:hover { background: #ff6b81; transform: translateY(-1px); }
+        .btn-secondary { background: #333; }
+        .btn-secondary:hover { background: #444; }
+        .result { background: #0a0a0f; border: 1px solid #333; border-radius: 8px; padding: 15px; margin-top: 15px; white-space: pre-wrap; font-size: 0.9em; }
+        .risk-high { color: #ff4757; }
+        .risk-medium { color: #ffa502; }
+        .risk-low { color: #2ed573; }
+        .risk-unknown { color: #888; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; font-weight: bold; margin: 2px; }
+        .badge-danger { background: #ff475720; color: #ff4757; border: 1px solid #ff4757; }
+        .badge-warning { background: #ffa50220; color: #ffa502; border: 1px solid #ffa502; }
+        .badge-safe { background: #2ed57320; color: #2ed573; border: 1px solid #2ed573; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: #0a0a0f; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; }
+        .stat-num { font-size: 1.8em; font-weight: bold; color: #ff4757; }
+        .stat-label { color: #888; font-size: 0.8em; }
+        .quick-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .quick-link { padding: 6px 12px; background: #333; color: #aaa; border-radius: 15px; font-size: 0.8em; text-decoration: none; transition: all 0.3s; }
+        .quick-link:hover { background: #ff4757; color: #fff; }
+        .template-card { background: #0a0a0f; border: 1px solid #333; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+        .template-card h3 { color: #ffa502; margin-bottom: 8px; }
+        .copy-btn { background: #2ed573; font-size: 0.8em; padding: 5px 10px; }
+        @media (max-width: 768px) { .tabs { flex-direction: column; } .tab { width: 100%; text-align: center; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🛡️ Email Security Manager</h1>
+    <p class="subtitle">Threat analysis, link checking, phone scam detection, abuse reporting</p>
+
+    <div class="stats-grid" id="stats"></div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('email')">📧 Email Headers</div>
+        <div class="tab" onclick="showTab('link')">🔗 Link Checker</div>
+        <div class="tab" onclick="showTab('phone')">📱 Phone Check</div>
+        <div class="tab" onclick="showTab('abuse')">🚨 Abuse Report</div>
+        <div class="tab" onclick="showTab('blacklist')">⛔ Blacklist</div>
+        <div class="tab" onclick="showTab('history')">📋 History</div>
+    </div>
+
+    <!-- Email Headers -->
+    <div class="panel active" id="panel-email">
+        <h2>📧 Email Header Analysis</h2>
+        <textarea id="emailHeaders" placeholder="Paste raw email headers here..."></textarea>
+        <button onclick="parseEmailHeaders()">🔍 Analyze Headers</button>
+        <div class="result" id="emailResult"></div>
+    </div>
+
+    <!-- Link Checker -->
+    <div class="panel" id="panel-link">
+        <h2>🔗 Link Safety Check</h2>
+        <input type="text" id="linkUrl" placeholder="https://suspicious-site.com/...">
+        <button onclick="checkLink()">🔍 Check Link</button>
+        <div class="quick-links">
+            <a class="quick-link" href="https://www.virustotal.com" target="_blank">VirusTotal</a>
+            <a class="quick-link" href="https://urlscan.io" target="_blank">URLScan.io</a>
+            <a class="quick-link" href="https://www.abuseipdb.com" target="_blank">AbuseIPDB</a>
+            <a class="quick-link" href="https://otx.alienvault.com" target="_blank">OTX AlienVault</a>
+        </div>
+        <div class="result" id="linkResult"></div>
+    </div>
+
+    <!-- Phone Check -->
+    <div class="panel" id="panel-phone">
+        <h2>📱 Phone Scam Check</h2>
+        <input type="text" id="phoneInput" placeholder="+48 123 456 789">
+        <button onclick="checkPhone()">🔍 Check Number</button>
+        <div class="quick-links" id="phoneDatabases"></div>
+        <div class="result" id="phoneResult"></div>
+    </div>
+
+    <!-- Abuse Report -->
+    <div class="panel" id="panel-abuse">
+        <h2>🚨 Abuse Report Generator</h2>
+        <div id="abuseTemplates"></div>
+        <div id="abuseForm" style="display:none; margin-top:15px;">
+            <h3 id="abuseFormTitle"></h3>
+            <input type="text" id="abuseIp" placeholder="Source IP">
+            <input type="text" id="abuseDomain" placeholder="Domain">
+            <input type="text" id="abuseUrl" placeholder="Phishing URL">
+            <textarea id="abuseEvidence" placeholder="Evidence (email headers, screenshots, etc.)"></textarea>
+            <button onclick="generateAbuseReport()">📋 Generate Report</button>
+            <div class="result" id="abuseResult"></div>
+        </div>
+    </div>
+
+    <!-- Blacklist -->
+    <div class="panel" id="panel-blacklist">
+        <h2>⛔ Blacklist</h2>
+        <input type="text" id="blValue" placeholder="IP, domain, email, or phone">
+        <input type="text" id="blType" placeholder="Type: ip / domain / email / phone">
+        <input type="text" id="blReason" placeholder="Reason (optional)">
+        <button onclick="addBlacklist()">➕ Add to Blacklist</button>
+        <div class="result" id="blacklistResult"></div>
+    </div>
+
+    <!-- History -->
+    <div class="panel" id="panel-history">
+        <h2>📋 Scan History</h2>
+        <button onclick="loadHistory()" class="btn-secondary">🔄 Refresh</button>
+        <div class="result" id="historyResult"></div>
+    </div>
+</div>
+
+<script>
+const API = '';
+
+function showTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+}
+
+function showResult(id, data) {
+    const el = document.getElementById(id);
+    if (typeof data === 'string') {
+        el.innerHTML = data;
+    } else {
+        el.innerHTML = formatResult(data);
+    }
+}
+
+function formatResult(obj, indent = 0) {
+    if (typeof obj !== 'object' || obj === null) return String(obj);
+    let html = '';
+    for (const [key, val] of Object.entries(obj)) {
+        if (key === 'risks' && Array.isArray(val)) {
+            html += '<div style="margin: 5px 0;"><strong>Risks:</strong><br>';
+            val.forEach(r => html += '<span class="badge badge-danger">' + r + '</span> ');
+            html += '</div>';
+        } else if (key === 'verdict') {
+            const cls = val === 'safe' ? 'badge-safe' : val === 'malicious' ? 'badge-danger' : 'badge-warning';
+            html += `<div style="margin: 5px 0;"><span class="badge ${cls}" style="font-size:1em;padding:5px 12px;">${val.toUpperCase()}</span></div>`;
+        } else if (typeof val === 'object' && val !== null) {
+            html += `<div style="margin:5px 0;"><strong>${key}:</strong><div style="margin-left:15px;">${formatResult(val, indent+1)}</div></div>`;
+        } else if (val && val !== '' && val !== 0 && val !== false) {
+            html += `<div><strong>${key}:</strong> ${val}</div>`;
+        }
+    }
+    return html;
+}
+
+// === Email Headers ===
+async function parseEmailHeaders() {
+    const headers = document.getElementById('emailHeaders').value.trim();
+    if (!headers) { alert('Paste email headers first'); return; }
+    showResult('emailResult', '⏳ Analyzing...');
+    try {
+        const resp = await fetch(`${API}/api/email/parse?headers=${encodeURIComponent(headers)}`);
+        const data = await resp.json();
+        showResult('emailResult', data);
+    } catch (e) {
+        showResult('emailResult', '❌ Error: ' + e.message);
+    }
+}
+
+// === Link Checker ===
+async function checkLink() {
+    const url = document.getElementById('linkUrl').value.trim();
+    if (!url) { alert('Enter a URL'); return; }
+    showResult('linkResult', '⏳ Checking...');
+    try {
+        const resp = await fetch(`${API}/api/link/check?url=${encodeURIComponent(url)}`);
+        const data = await resp.json();
+        showResult('linkResult', data);
+    } catch (e) {
+        showResult('linkResult', '❌ Error: ' + e.message);
+    }
+}
+
+// === Phone Check ===
+async function checkPhone() {
+    const phone = document.getElementById('phoneInput').value.trim();
+    if (!phone) { alert('Enter phone number'); return; }
+    showResult('phoneResult', '⏳ Checking...');
+    try {
+        const resp = await fetch(`${API}/api/phone/check?phone=${encodeURIComponent(phone)}`);
+        const data = await resp.json();
+        showResult('phoneResult', data);
+    } catch (e) {
+        showResult('phoneResult', '❌ Error: ' + e.message);
+    }
+}
+
+async function loadPhoneDatabases() {
+    try {
+        const resp = await fetch(`${API}/api/phone/databases`);
+        const data = await resp.json();
+        const el = document.getElementById('phoneDatabases');
+        el.innerHTML = Object.entries(data).map(([name, url]) =>
+            `<a class="quick-link" href="${url}" target="_blank">${name}</a>`
+        ).join('');
+    } catch (e) {}
+}
+
+// === Abuse Report ===
+let currentAbuseType = '';
+
+async function loadAbuseTemplates() {
+    try {
+        const resp = await fetch(`${API}/api/abuse/templates`);
+        const data = await resp.json();
+        const el = document.getElementById('abuseTemplates');
+        el.innerHTML = Object.entries(data).map(([key, t]) => `
+            <div class="template-card">
+                <h3>${t.name}</h3>
+                <p style="color:#888;font-size:0.9em;">${t.subject}</p>
+                <button onclick="selectAbuseTemplate('${key}')">Use This Template</button>
+            </div>
+        `).join('');
+    } catch (e) {}
+}
+
+function selectAbuseTemplate(type) {
+    currentAbuseType = type;
+    document.getElementById('abuseForm').style.display = 'block';
+    document.getElementById('abuseFormTitle').textContent = 'Generate: ' + type.toUpperCase();
+}
+
+async function generateAbuseReport() {
+    const params = new URLSearchParams({
+        report_type: currentAbuseType,
+        source_ip: document.getElementById('abuseIp').value,
+        domain: document.getElementById('abuseDomain').value,
+        url: document.getElementById('abuseUrl').value,
+        evidence: document.getElementById('abuseEvidence').value,
+    });
+    try {
+        const resp = await fetch(`${API}/api/abuse/generate?${params}`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.body) {
+            showResult('abuseResult', `<pre style="white-space:pre-wrap;">${data.body}</pre><br><strong>Send to:</strong> ${data.contacts.join(', ')}`);
+        } else {
+            showResult('abuseResult', data);
+        }
+    } catch (e) {
+        showResult('abuseResult', '❌ Error: ' + e.message);
+    }
+}
+
+// === Blacklist ===
+async function addBlacklist() {
+    const value = document.getElementById('blValue').value.trim();
+    const type = document.getElementById('blType').value.trim();
+    const reason = document.getElementById('blReason').value.trim();
+    if (!value || !type) { alert('Enter value and type'); return; }
+    try {
+        const resp = await fetch(`${API}/api/blacklist/add?entry_type=${type}&value=${encodeURIComponent(value)}&reason=${encodeURIComponent(reason)}`, { method: 'POST' });
+        const data = await resp.json();
+        showResult('blacklistResult', data.success ? `✅ Added ${value} to blacklist` : '⚠️ Already exists');
+        document.getElementById('blValue').value = '';
+    } catch (e) {
+        showResult('blacklistResult', '❌ Error: ' + e.message);
+    }
+}
+
+// === History ===
+async function loadHistory() {
+    try {
+        const resp = await fetch(`${API}/api/history`);
+        const data = await resp.json();
+        if (data.length === 0) {
+            showResult('historyResult', 'No scans yet');
+            return;
+        }
+        showResult('historyResult', data.map(s => `[${s.created_at}] ${s.scan_type}: ${s.target} (risk: ${s.risk_score})`).join('\n'));
+    } catch (e) {
+        showResult('historyResult', '❌ Error: ' + e.message);
+    }
+}
+
+// === Stats ===
+async function loadStats() {
+    try {
+        const resp = await fetch(`${API}/api/stats`);
+        const data = await resp.json();
+        document.getElementById('stats').innerHTML = `
+            <div class="stat-card"><div class="stat-num">${data.total_scans}</div><div class="stat-label">Total Scans</div></div>
+            <div class="stat-card"><div class="stat-num">${data.threats_found}</div><div class="stat-label">Threats Found</div></div>
+            <div class="stat-card"><div class="stat-num">${data.blacklisted}</div><div class="stat-label">Blacklisted</div></div>
+            <div class="stat-card"><div class="stat-num">${data.abuse_reports}</div><div class="stat-label">Abuse Reports</div></div>
+        `;
+    } catch (e) {}
+}
+
+// Init
+loadStats();
+loadPhoneDatabases();
+loadAbuseTemplates();
+</script>
+</body>
+</html>
