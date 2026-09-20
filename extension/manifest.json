@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Email Security Manager",
+  "version": "1.0.0",
+  "description": "Check phone numbers, links, and emails for threats. Works on Android Chrome.",
+  "permissions": [
+    "contextMenus",
+    "clipboardWrite",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "https://www.virustotal.com/*",
+    "https://urlscan.io/*",
+    "https://www.abuseipdb.com/*",
+    "https://www.tellows.pl/*",
+    "https://nienadzwon.pl/*",
+    "https://www.jakitonumer.pl/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Email Security Manager"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

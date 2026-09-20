@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 360px; min-height: 400px; background: #0a0a0f; color: #e0e0e0; font-family: 'Courier New', monospace; }
+.header { background: #1a1a2e; padding: 15px; text-align: center; border-bottom: 1px solid #333; }
+.header h1 { color: #ff4757; font-size: 1.2em; }
+.stats { display: flex; gap: 5px; padding: 10px; background: #12121a; }
+.stat { flex: 1; text-align: center; padding: 8px 4px; background: #1a1a2e; border-radius: 8px; }
+.stat-num { font-size: 1.3em; font-weight: bold; color: #ff4757; }
+.stat-label { font-size: 0.65em; color: #888; }
+.section { padding: 12px; }
+.section h2 { color: #ffa502; font-size: 0.9em; margin-bottom: 8px; }
+.input-row { display: flex; gap: 6px; margin-bottom: 8px; }
+input { flex: 1; padding: 8px 10px; background: #0a0a0f; border: 1px solid #333; color: #e0e0e0; border-radius: 6px; font-family: inherit; font-size: 0.85em; }
+input:focus { outline: none; border-color: #ff4757; }
+button { padding: 8px 12px; background: #ff4757; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.85em; white-space: nowrap; }
+button:hover { background: #ff6b81; }
+button.secondary { background: #333; }
+.result { background: #0a0a0f; border: 1px solid #333; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.8em; max-height: 150px; overflow-y: auto; display: none; }
+.result.show { display: block; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; font-weight: bold; margin: 1px; }
+.badge-danger { background: #ff475720; color: #ff4757; border: 1px solid #ff4757; }
+.badge-warning { background: #ffa50220; color: #ffa502; border: 1px solid #ffa502; }
+.badge-safe { background: #2ed57320; color: #2ed573; border: 1px solid #2ed573; }
+.badge-unknown { background: #88820; color: #888; border: 1px solid #888; }
+.links { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.link-btn { padding: 4px 8px; background: #333; color: #aaa; border-radius: 10px; font-size: 0.7em; text-decoration: none; cursor: pointer; border: none; }
+.link-btn:hover { background: #ff4757; color: #fff; }
+.footer { text-align: center; padding: 8px; color: #555; font-size: 0.7em; border-top: 1px solid #333; }
+.loading { color: #888; text-align: center; padding: 10px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🛡️ Email Security Manager</h1>
+</div>
+
+<div class="stats" id="stats">
+  <div class="stat"><div class="stat-num" id="statScans">-</div><div class="stat-label">Scans</div></div>
+  <div class="stat"><div class="stat-num" id="statThreats">-</div><div class="stat-label">Threats</div></div>
+  <div class="stat"><div class="stat-num" id="statBlocked">-</div><div class="stat-label">Blocked</div></div>
+</div>
+
+<div class="section">
+  <h2>📱 Phone Check</h2>
+  <div class="input-row">
+    <input type="text" id="phoneInput" placeholder="+48 123 456 789">
+    <button onclick="checkPhone()">🔍</button>
+  </div>
+  <div class="links">
+    <button class="link-btn" onclick="openDB('tellows')">Tellows</button>
+    <button class="link-btn" onclick="openDB('nienadzwon')">NieNaDzwoń</button>
+    <button class="link-btn" onclick="openDB('jakitonumer')">JakiToNumer</button>
+  </div>
+  <div class="result" id="phoneResult"></div>
+</div>
+
+<div class="section">
+  <h2>🔗 Link Check</h2>
+  <div class="input-row">
+    <input type="text" id="linkInput" placeholder="https://suspicious-site.com">
+    <button onclick="checkLink()">🔍</button>
+  </div>
+  <div class="links">
+    <button class="link-btn" onclick="openVT()">VirusTotal</button>
+    <button class="link-btn" onclick="openURLScan()">URLScan</button>
+    <button class="link-btn" onclick="openAbuseIPDB()">AbuseIPDB</button>
+  </div>
+  <div class="result" id="linkResult"></div>
+</div>
+
+<div class="section">
+  <h2>📋 Quick Actions</h2>
+  <div class="input-row">
+    <button onclick="copyAbuseTemplate('hosting')" style="flex:1;font-size:0.75em">🏢 Hosting</button>
+    <button onclick="copyAbuseTemplate('domain')" style="flex:1;font-size:0.75em">🌐 Domain</button>
+    <button onclick="copyAbuseTemplate('isp')" style="flex:1;font-size:0.75em">📡 ISP</button>
+    <button onclick="copyAbuseTemplate('cloudflare')" style="flex:1;font-size:0.75em">☁️ CF</button>
+  </div>
+  <div class="result" id="abuseResult"></div>
+</div>
+
+<div class="footer">
+  technoporada — Email Security Manager v1.0
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

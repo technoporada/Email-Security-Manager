@@ -102,10 +102,32 @@ Email-Security-Manager/
 └── .github/workflows/ci.yml
 ```
 
+## Chrome Extension (Android + Desktop)
+
+Install the extension from `extension/` folder:
+1. Open `chrome://extensions`
+2. Enable Developer Mode
+3. Click "Load unpacked" → select `extension/` folder
+4. Right-click any phone number → "Check phone"
+5. Right-click any link → "Check link"
+6. Click extension icon → quick check tools
+
+**Features:**
+- Context menu: check phone numbers and links directly from any page
+- Auto-copy high-risk phone numbers
+- Abuse report templates (one-click copy)
+- Toast notifications on pages
+- Works on Android Chrome 119+
+
+## PWA (Install on Android)
+
+The frontend is also a PWA — open `http://your-server:8000` in Android Chrome and tap "Add to Home Screen".
+
 ## Tech Stack
 
 - **Backend:** FastAPI + httpx + SQLite
-- **Frontend:** Vanilla JS/CSS (dark theme)
+- **Frontend:** Vanilla JS/CSS (dark theme) + PWA
+- **Extension:** Chrome Manifest V3 (Android + Desktop)
 - **APIs:** VirusTotal, AbuseIPDB, OTX, ip-api (all free tier)
 
 ## License

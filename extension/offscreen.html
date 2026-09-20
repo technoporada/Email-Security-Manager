@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "copy") {
+    navigator.clipboard.writeText(msg.text).catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
