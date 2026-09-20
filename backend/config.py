@@ -21,11 +21,11 @@ CACHE_TTL = {
     "ip": 1800,
 }
 
-# API keys (optional — works without them but with lower limits)
-VIRUSTOTAL_KEY = os.getenv("VIRUSTOTAL_KEY", "")
-ABUSEIPDB_KEY = os.getenv("ABUSEIPDB_KEY", "")
-URLSCAN_KEY = os.getenv("URLSCAN_KEY", "")
-OTX_KEY = os.getenv("OTX_KEY", "")
+# API keys — NOT NEEDED. Everything uses scraping.
+VIRUSTOTAL_KEY = ""  # Not needed
+ABUSEIPDB_KEY = ""  # Not needed
+URLSCAN_KEY = ""  # Not needed
+OTX_KEY = ""  # Not needed
 
 # Suspicious TLDs
 SUSPICIOUS_TLDS = [".tk", ".ml", ".ga", ".cf", ".ru", ".cn", ".top", ".xyz", ".buzz", ".click", ".link"]
