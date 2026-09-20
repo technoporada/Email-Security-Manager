@@ -28,13 +28,18 @@ Free APIs only — no paid keys required. Works without API keys (local analysis
 
 | API | Free Tier | Key Required? |
 |-----|-----------|---------------|
-| **VirusTotal** | 4 req/min | Yes (free key) |
-| **AbuseIPDB** | 60 req/min | Yes (free key) |
-| **OTX AlienVault** | Generous | Optional |
+| **VirusTotal** | 500 req/day, 4/min | Yes (free key) |
+| **AbuseIPDB** | 1,000 checks/day | Yes (free key) |
+| **OTX AlienVault** | 10,000 req/hour | Yes (free key) |
 | **ip-api.com** | 45 req/min | No |
 | **Tellows/NieNaDzwoń** | Scraping | No |
 
 **Without any API keys:** Local analysis still works (suspicious TLDs, URL shorteners, IP detection, header parsing).
+
+Get free keys:
+- VirusTotal: https://www.virustotal.com/gui/my-apikey
+- AbuseIPDB: https://www.abuseipdb.com/account/api
+- OTX: https://otx.alienvault.com/api (Settings → API Integration)
 
 ## Quick Start
 

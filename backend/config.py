@@ -5,10 +5,10 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///email_security.db")
 
 # Rate limits (requests per minute)
 RATE_LIMITS = {
-    "virustotal": 4,       # Free tier: 4 req/min
-    "abuseipdb": 60,       # Free tier: 60 req/min
-    "urlscan": 3,          # Free tier: ~3 req/s but we limit
-    "otx": 10,             # Free tier: generous
+    "virustotal": 4,       # Free: 4 req/min, 500/day
+    "abuseipdb": 10,       # Free: 1,000/day = ~0.7/min avg, burst up to ~10
+    "urlscan": 3,          # Free: ~3 req/s but we limit
+    "otx": 100,            # Free: 10,000/hour
     "ip_api": 45,          # Free: 45 req/min
 }
 
