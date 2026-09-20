@@ -51,11 +51,7 @@ button.secondary { background: #333; }
     <input type="text" id="phoneInput" placeholder="+48 123 456 789">
     <button onclick="checkPhone()">🔍</button>
   </div>
-  <div class="links">
-    <button class="link-btn" onclick="openDB('tellows')">Tellows</button>
-    <button class="link-btn" onclick="openDB('nienadzwon')">NieNaDzwoń</button>
-    <button class="link-btn" onclick="openDB('jakitonumer')">JakiToNumer</button>
-  </div>
+  <div class="links">Bazy numerów są sprawdzane automatycznie.</div>
   <div class="result" id="phoneResult"></div>
 </div>
 
@@ -65,11 +61,7 @@ button.secondary { background: #333; }
     <input type="text" id="linkInput" placeholder="https://suspicious-site.com">
     <button onclick="checkLink()">🔍</button>
   </div>
-  <div class="links">
-    <button class="link-btn" onclick="openVT()">VirusTotal</button>
-    <button class="link-btn" onclick="openURLScan()">URLScan</button>
-    <button class="link-btn" onclick="openAbuseIPDB()">AbuseIPDB</button>
-  </div>
+  <div class="links">Analiza wykonywana przez lokalny backend.</div>
   <div class="result" id="linkResult"></div>
 </div>
 

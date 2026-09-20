@@ -75,12 +75,7 @@
         <h2>🔗 Link Safety Check</h2>
         <input type="text" id="linkUrl" placeholder="https://suspicious-site.com/...">
         <button onclick="checkLink()">🔍 Check Link</button>
-        <div class="quick-links">
-            <a class="quick-link" href="https://www.virustotal.com" target="_blank">VirusTotal</a>
-            <a class="quick-link" href="https://urlscan.io" target="_blank">URLScan.io</a>
-            <a class="quick-link" href="https://www.abuseipdb.com" target="_blank">AbuseIPDB</a>
-            <a class="quick-link" href="https://otx.alienvault.com" target="_blank">OTX AlienVault</a>
-        </div>
+        <p class="subtitle">Analiza lokalna oraz automatyczne sprawdzanie źródeł zagrożeń.</p>
         <div class="result" id="linkResult"></div>
     </div>
 
@@ -89,7 +84,7 @@
         <h2>📱 Phone Scam Check</h2>
         <input type="text" id="phoneInput" placeholder="+48 123 456 789">
         <button onclick="checkPhone()">🔍 Check Number</button>
-        <div class="quick-links" id="phoneDatabases"></div>
+        <p class="subtitle">Numer jest sprawdzany automatycznie w skonfigurowanych bazach.</p>
         <div class="result" id="phoneResult"></div>
     </div>
 
@@ -212,9 +207,7 @@ async function loadPhoneDatabases() {
         const resp = await fetch(`${API}/api/phone/databases`);
         const data = await resp.json();
         const el = document.getElementById('phoneDatabases');
-        el.innerHTML = Object.entries(data).map(([name, url]) =>
-            `<a class="quick-link" href="${url}" target="_blank">${name}</a>`
-        ).join('');
+        el.textContent = `Sprawdzono źródła: ${Object.keys(data).join(', ')}`;
     } catch (e) {}
 }
 

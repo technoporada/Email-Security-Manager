@@ -42,7 +42,6 @@ async function checkPhone() {
       ${data.categories.length > 0 ? `<div style="color:#888;font-size:0.8em">${data.categories.join(", ")}</div>` : ""}
       <div style="margin-top:6px">
         <button class="secondary" onclick="copyText('${phone}')" style="font-size:0.75em">📋 Copy number</button>
-        <button class="secondary" onclick="openDB('tellows','${phone}')" style="font-size:0.75em">🔍 Tellows</button>
       </div>
     `;
 
@@ -51,7 +50,7 @@ async function checkPhone() {
       await navigator.clipboard.writeText(phone).catch(() => {});
     }
   } catch (e) {
-    el.innerHTML = `<span style="color:#ff4757">API offline — copy number and check manually</span>
+    el.innerHTML = `<span style="color:#ff4757">API offline — uruchom backend i spróbuj ponownie</span>
       <div style="margin-top:4px"><button class="secondary" onclick="copyText('${phone}')" style="font-size:0.75em">📋 Copy</button></div>`;
   }
 }
@@ -75,8 +74,7 @@ async function checkLink() {
       ${data.risks.length > 0 ? `<div style="margin-top:6px">${data.risks.map(r => `<div style="color:#ff4757;font-size:0.8em">⚠ ${r}</div>`).join("")}</div>` : `<div style="color:#2ed573;font-size:0.8em;margin-top:4px">✅ No threats detected</div>`}
     `;
   } catch (e) {
-    el.innerHTML = `<span style="color:#ff4757">API offline</span>
-      <div style="margin-top:4px"><button class="secondary" onclick="window.open('https://www.virustotal.com/gui/url/${encodeURIComponent(url)}')" style="font-size:0.75em">Open VirusTotal</button></div>`;
+    el.innerHTML = `<span style="color:#ff4757">API offline — uruchom backend i spróbuj ponownie</span>`;
   }
 }
 
@@ -96,32 +94,6 @@ async function copyAbuseTemplate(type) {
   } catch (e) {
     el.innerHTML = `<span style="color:#ff4757">API offline</span>`;
   }
-}
-
-// Open phone databases
-function openDB(db, phone = "") {
-  const urls = {
-    tellows: phone ? `https://www.tellows.pl/num/${phone.replace(/[\s\-\(\)\+]/g, "")}` : "https://www.tellows.pl/",
-    nienadzwon: phone ? `https://nienadzwon.pl/numer/${phone.replace(/[\s\-\(\)\+]/g, "")}` : "https://nienadzwon.pl/",
-    jakitonumer: phone ? `https://www.jakitonumer.pl/numer/${phone.replace(/[\s\-\(\)\+]/g, "")}` : "https://www.jakitonumer.pl/",
-  };
-  window.open(urls[db], "_blank");
-}
-
-// Open external tools
-function openVT() {
-  const url = document.getElementById("linkInput").value.trim();
-  window.open(url ? `https://www.virustotal.com/gui/url/${encodeURIComponent(url)}` : "https://www.virustotal.com", "_blank");
-}
-
-function openURLScan() {
-  const url = document.getElementById("linkInput").value.trim();
-  window.open(url ? `https://urlscan.io/search/#${encodeURIComponent(url)}` : "https://urlscan.io", "_blank");
-}
-
-function openAbuseIPDB() {
-  const url = document.getElementById("linkInput").value.trim();
-  window.open("https://www.abuseipdb.com", "_blank");
 }
 
 // Copy text

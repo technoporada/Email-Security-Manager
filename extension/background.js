@@ -75,8 +75,7 @@ async function checkLink(url, tab) {
     const data = await resp.json();
     showNotification(tab, `Link: ${data.verdict} — ${data.risks.length} risks`);
   } catch (e) {
-    // Fallback: open VirusTotal
-    chrome.tabs.create({ url: `https://www.virustotal.com/gui/url/${encodeURIComponent(url)}` });
+    showNotification(tab, "API offline — uruchom backend i spróbuj ponownie");
   }
 }
 
