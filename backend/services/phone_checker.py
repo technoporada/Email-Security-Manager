@@ -72,7 +72,7 @@ def _get_db_urls(phone: str) -> Dict[str, str]:
 
 async def _scrape_database(db_name: str, url: str) -> Optional[Dict]:
     try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             resp = await client.get(
                 url,
                 headers={

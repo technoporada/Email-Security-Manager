@@ -48,7 +48,12 @@ async def check_url(url: str) -> Dict:
     ip = None
     if domain:
         try:
-            ip = socket.gethostbyname(domain)
+            import ipaddress
+            _ip = socket.gethostbyname(domain)
+            # SSRF guard: never query external threat feeds with an internal
+            # IP (information leak) and never treat a private host as a target.
+            if ipaddress.ip_address(_ip).is_global:
+                ip = _ip
         except Exception:
             pass
 
@@ -142,7 +147,7 @@ async def _ip_api_check(ip: str) -> Dict:
 async def _scrape_abuseipdb(ip: str) -> Dict:
     """Scrape AbuseIPDB page — no API key needed."""
     try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             resp = await client.get(
                 f"https://www.abuseipdb.com/check/{ip}",
                 headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0"}
@@ -172,7 +177,7 @@ async def _scrape_abuseipdb(ip: str) -> Dict:
 async def _scrape_virustotal(url: str) -> Dict:
     """Scrape VirusTotal page — no API key needed."""
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
             resp = await client.get(
                 f"https://www.virustotal.com/gui/url/{url}",
                 headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0"}
