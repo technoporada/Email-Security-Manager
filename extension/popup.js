@@ -33,25 +33,56 @@ async function checkPhone() {
     const data = await resp.json();
     const riskCls = data.risk === "high" ? "badge-danger" : data.risk === "medium" ? "badge-warning" : data.risk === "low" ? "badge-safe" : "badge-unknown";
 
-    el.innerHTML = `
-      <div><strong>${data.phone}</strong></div>
-      <div style="margin:4px 0">
-        <span class="badge ${riskCls}">${data.risk.toUpperCase()}</span>
-        <span style="color:#888;font-size:0.8em">${data.reports} reports</span>
-      </div>
-      ${data.categories.length > 0 ? `<div style="color:#888;font-size:0.8em">${data.categories.join(", ")}</div>` : ""}
-      <div style="margin-top:6px">
-        <button class="secondary" onclick="copyText('${phone}')" style="font-size:0.75em">📋 Copy number</button>
-      </div>
-    `;
+    const phoneLabel = document.createElement("div");
+    const phoneValue = document.createElement("strong");
+    phoneValue.textContent = data.phone;
+    phoneLabel.append(phoneValue);
+    const riskDetails = document.createElement("div");
+    riskDetails.style.margin = "4px 0";
+    const riskBadge = document.createElement("span");
+    riskBadge.className = `badge ${riskCls}`;
+    riskBadge.textContent = data.risk.toUpperCase();
+    const reportCount = document.createElement("span");
+    reportCount.style.color = "#888";
+    reportCount.style.fontSize = "0.8em";
+    reportCount.textContent = `${data.reports} reports`;
+    riskDetails.append(riskBadge, reportCount);
+    const resultElements = [phoneLabel, riskDetails];
+    if (data.categories.length > 0) {
+      const categories = document.createElement("div");
+      categories.style.color = "#888";
+      categories.style.fontSize = "0.8em";
+      categories.textContent = data.categories.join(", ");
+      resultElements.push(categories);
+    }
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.marginTop = "6px";
+    const copyButton = document.createElement("button");
+    copyButton.className = "secondary";
+    copyButton.style.fontSize = "0.75em";
+    copyButton.textContent = "📋 Copy number";
+    copyButton.addEventListener("click", () => copyText(phone));
+    buttonContainer.append(copyButton);
+    resultElements.push(buttonContainer);
+    el.replaceChildren(...resultElements);
 
     // Auto-copy high risk numbers
     if (data.risk === "high") {
       await navigator.clipboard.writeText(phone).catch(() => {});
     }
   } catch (e) {
-    el.innerHTML = `<span style="color:#ff4757">API offline — uruchom backend i spróbuj ponownie</span>
-      <div style="margin-top:4px"><button class="secondary" onclick="copyText('${phone}')" style="font-size:0.75em">📋 Copy</button></div>`;
+    const message = document.createElement("span");
+    message.style.color = "#ff4757";
+    message.textContent = "API offline — uruchom backend i spróbuj ponownie";
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.marginTop = "4px";
+    const copyButton = document.createElement("button");
+    copyButton.className = "secondary";
+    copyButton.style.fontSize = "0.75em";
+    copyButton.textContent = "📋 Copy";
+    copyButton.addEventListener("click", () => copyText(phone));
+    buttonContainer.append(copyButton);
+    el.replaceChildren(message, buttonContainer);
   }
 }
 
