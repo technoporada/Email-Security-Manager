@@ -71,7 +71,10 @@ async def check_url(url: str) -> Dict:
             result["safe"] = False
 
     # 5. Scrape VirusTotal page (no API key)
-    if limiter.can_request("virustotal"):
+    # SSRF guard: nie wysyłaj wewnętrznych URL do zewnętrznej usługi
+    if _is_internal_url(url):
+        result["risks"].append("Internal URL detected — not sent to VirusTotal")
+    elif limiter.can_request("virustotal"):
         vt = await _scrape_virustotal(url)
         result["details"]["virustotal"] = vt
         if vt.get("malicious", 0) > 0:
@@ -92,7 +95,38 @@ async def check_url(url: str) -> Dict:
     else:
         result["verdict"] = "safe"
 
+    # Sanitize external data before caching/storing
+    result = _sanitize_result(result)
+
     limiter.set_cache("url", url, result)
+    return result
+
+
+def _sanitize_result(result: Dict) -> Dict:
+    """Sanitize external API data to prevent XSS/injection."""
+    def sanitize_str(value, max_len=500):
+        if not isinstance(value, str):
+            return value
+        # Remove HTML tags and truncate
+        value = re.sub(r"<[^>]+>", "", value)
+        return value[:max_len]
+
+    def sanitize_obj(obj):
+        if isinstance(obj, dict):
+            return {k: sanitize_obj(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [sanitize_obj(v) for v in obj]
+        elif isinstance(obj, str):
+            return sanitize_str(obj)
+        else:
+            return obj
+
+    # Sanitize details (external API responses)
+    if "details" in result and isinstance(result["details"], dict):
+        result["details"] = sanitize_obj(result["details"])
+    # Sanitize risks
+    if "risks" in result and isinstance(result["risks"], list):
+        result["risks"] = [sanitize_str(r, 200) for r in result["risks"]]
     return result
 
 
@@ -124,7 +158,7 @@ def _local_analysis(url: str) -> Dict:
 async def _ip_api_check(ip: str) -> Dict:
     """ip-api.com — free, no auth, 45 req/min."""
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             resp = await client.get(f"http://ip-api.com/json/{ip}?fields=status,message,country,countryCode,region,city,isp,org,as,proxy,hosting")
             if resp.status_code == 200:
                 data = resp.json()
@@ -202,7 +236,7 @@ async def _scrape_virustotal(url: str) -> Dict:
 async def _otx_check(domain: str) -> Dict:
     """OTX AlienVault — free, generous (10k/hr)."""
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             resp = await client.get(
                 f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/general"
             )
@@ -225,3 +259,23 @@ def _extract_domain(url: str) -> Optional[str]:
         return parsed.hostname
     except Exception:
         return None
+
+
+def _is_internal_url(url: str) -> bool:
+    """Sprawdza czy URL wskazuje na adres wewnętrzny (SSRF guard)."""
+    import ipaddress
+    try:
+        parsed = urlparse(url if url.startswith("http") else f"http://{url}")
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        try:
+            ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+            return not ip.is_global
+        except (socket.gaierror, ValueError):
+            # hostname to domena, nie IP — sprawdź czy to localhost
+            if hostname.lower() in {"localhost", "127.0.0.1", "::1"}:
+                return True
+            return False
+    except Exception:
+        return False

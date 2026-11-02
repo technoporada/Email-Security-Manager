@@ -272,7 +272,14 @@ async function generateAbuseReport() {
         const resp = await fetch(`${API}/api/abuse/generate?${params}`, { method: 'POST' });
         const data = await resp.json();
         if (data.body) {
-            showResult('abuseResult', `<pre style="white-space:pre-wrap;">${data.body}</pre><br><strong>Send to:</strong> ${data.contacts.join(', ')}`);
+            const pre = document.createElement('pre');
+            pre.style.whiteSpace = 'pre-wrap';
+            pre.textContent = data.body;
+            const contacts = document.createElement('div');
+            contacts.innerHTML = `<strong>Send to:</strong> ${data.contacts.map(c => escapeHTML(c)).join(', ')}`;
+            const container = document.createElement('div');
+            container.append(pre, contacts);
+            document.getElementById('abuseResult').replaceChildren(container);
         } else {
             showResult('abuseResult', data);
         }
