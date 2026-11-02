@@ -115,7 +115,7 @@ async def api_phone_databases():
 # === Abuse Reporting ===
 
 @app.get("/api/abuse/templates")
-async def api_abuse_templates():
+async def api_abuse_templates(_: None = Depends(require_admin_token)):
     return get_all_templates()
 
 

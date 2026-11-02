@@ -7,11 +7,14 @@ from config import DATABASE_PATH
 
 
 class Database:
+    MAX_DB_SIZE_MB = 50
+
     def __init__(self, db_path: Optional[str] = None):
         db_path = db_path or DATABASE_PATH
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_db()
+        self._enforce_db_size()
 
     def _init_db(self):
         self.conn.executescript("""
@@ -47,6 +50,18 @@ class Database:
             CREATE INDEX IF NOT EXISTS idx_blacklist_value ON blacklist(value);
         """)
         self.conn.commit()
+
+    def _enforce_db_size(self):
+        """Keep database small: trim oldest scans if over 5000 records."""
+        try:
+            total = self.conn.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
+            if total > 5000:
+                self.conn.execute(
+                    "DELETE FROM scans WHERE id IN (SELECT id FROM scans ORDER BY created_at ASC LIMIT 100)"
+                )
+                self.conn.commit()
+        except Exception:
+            pass
 
     MAX_SCANS = 10000
 
