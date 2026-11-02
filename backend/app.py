@@ -67,7 +67,8 @@ async def index():
 
 @app.post("/api/email/parse")
 async def api_parse_email(
-    headers: str = Query(..., min_length=1, max_length=200_000, description="Raw email headers")
+    headers: str = Query(..., min_length=1, max_length=200_000, description="Raw email headers"),
+    _: None = Depends(require_admin_token),
 ):
     result = parse_headers(headers)
     db.save_scan("email_headers", result.get("from", "unknown"), result, result.get("risk_score", 0))
@@ -78,7 +79,8 @@ async def api_parse_email(
 
 @app.get("/api/link/check")
 async def api_check_link(
-    url: str = Query(..., min_length=1, max_length=2048, description="URL to check")
+    url: str = Query(..., min_length=1, max_length=2048, description="URL to check"),
+    _: None = Depends(require_admin_token),
 ):
     cached = link_limiter.get_cached("url", url)
     if cached:
@@ -93,7 +95,8 @@ async def api_check_link(
 @app.get("/api/phone/check")
 async def api_check_phone(
     phone: str = Query(..., min_length=7, max_length=25, pattern=r"^\+?[0-9\s().-]+$",
-                       description="Phone number")
+                       description="Phone number"),
+    _: None = Depends(require_admin_token),
 ):
     cached = phone_limiter.get_cached("phone", phone)
     if cached:
@@ -123,6 +126,7 @@ async def api_generate_abuse_report(
     domain: str = Query("", max_length=253),
     url: str = Query("", max_length=2048),
     evidence: str = Query("", max_length=50_000),
+    _: None = Depends(require_admin_token),
 ):
     result = generate_report(report_type, source_ip, domain, url, evidence)
     if "error" not in result:
