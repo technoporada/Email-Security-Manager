@@ -1,6 +1,7 @@
 """Email Security Manager — FastAPI backend."""
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from typing import Optional
@@ -36,6 +37,15 @@ app = FastAPI(
     description="Email threat analysis, link checking, phone scam detection, abuse reporting",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# CORS — tylko localhost (brak cross-origin z zewnętrznych stron)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["*"],
 )
 
 # Mount static files
@@ -175,14 +185,14 @@ async def api_history(
 
 
 @app.get("/api/stats")
-async def api_stats():
+async def api_stats(_: None = Depends(require_admin_token)):
     return db.get_stats()
 
 
 # === Rate Limit Status ===
 
 @app.get("/api/ratelimit")
-async def api_ratelimit_status():
+async def api_ratelimit_status(_: None = Depends(require_admin_token)):
     return {
         "virustotal": {
             "can_request": link_limiter.can_request("virustotal"),

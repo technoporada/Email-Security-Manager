@@ -48,7 +48,16 @@ class Database:
         """)
         self.conn.commit()
 
+    MAX_SCANS = 10000
+
     def save_scan(self, scan_type: str, target: str, result: Dict, risk_score: int = 0) -> int:
+        # Czyszczenie najstarszych rekordów przy przekroczeniu limitu
+        count = self.conn.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
+        if count >= self.MAX_SCANS:
+            self.conn.execute(
+                "DELETE FROM scans WHERE id IN (SELECT id FROM scans ORDER BY created_at ASC LIMIT 100)"
+            )
+            self.conn.commit()
         cur = self.conn.execute(
             "INSERT INTO scans (scan_type, target, result, risk_score) VALUES (?, ?, ?, ?)",
             (scan_type, target, json.dumps(result), risk_score)
@@ -103,7 +112,15 @@ class Database:
         self.conn.commit()
         return cur.rowcount > 0
 
+    MAX_REPORTS = 1000
+
     def save_abuse_report(self, report_type: str, target: str, report_body: str, contacts: List[str]) -> int:
+        count = self.conn.execute("SELECT COUNT(*) FROM abuse_reports").fetchone()[0]
+        if count >= self.MAX_REPORTS:
+            self.conn.execute(
+                "DELETE FROM abuse_reports WHERE id IN (SELECT id FROM abuse_reports ORDER BY created_at ASC LIMIT 50)"
+            )
+            self.conn.commit()
         cur = self.conn.execute(
             "INSERT INTO abuse_reports (report_type, target, report_body, contacts) VALUES (?, ?, ?, ?)",
             (report_type, target, report_body, json.dumps(contacts))

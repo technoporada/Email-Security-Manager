@@ -71,7 +71,10 @@ async def check_url(url: str) -> Dict:
             result["safe"] = False
 
     # 5. Scrape VirusTotal page (no API key)
-    if limiter.can_request("virustotal"):
+    # SSRF guard: nie wysyłaj wewnętrznych URL do zewnętrznej usługi
+    if _is_internal_url(url):
+        result["risks"].append("Internal URL detected — not sent to VirusTotal")
+    elif limiter.can_request("virustotal"):
         vt = await _scrape_virustotal(url)
         result["details"]["virustotal"] = vt
         if vt.get("malicious", 0) > 0:
@@ -225,3 +228,23 @@ def _extract_domain(url: str) -> Optional[str]:
         return parsed.hostname
     except Exception:
         return None
+
+
+def _is_internal_url(url: str) -> bool:
+    """Sprawdza czy URL wskazuje na adres wewnętrzny (SSRF guard)."""
+    import ipaddress
+    try:
+        parsed = urlparse(url if url.startswith("http") else f"http://{url}")
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        try:
+            ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+            return not ip.is_global
+        except (socket.gaierror, ValueError):
+            # hostname to domena, nie IP — sprawdź czy to localhost
+            if hostname.lower() in {"localhost", "127.0.0.1", "::1"}:
+                return True
+            return False
+    except Exception:
+        return False
