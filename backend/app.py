@@ -13,6 +13,7 @@ from services.email_parser import parse_headers
 from services.link_checker import check_url, limiter as link_limiter
 from services.phone_checker import check_phone, limiter as phone_limiter
 from services.abuse_reporter import generate_report, get_all_templates
+from services.breach_checker import check_password
 from config import ADMIN_TOKEN, BLACKLIST_ENTRY_TYPES
 
 db = Database()
@@ -194,6 +195,14 @@ async def api_stats(_: None = Depends(require_admin_token)):
 
 
 # === Rate Limit Status ===
+
+@app.get("/api/breach/password")
+async def api_check_password(
+    password: str = Query(..., min_length=1, max_length=256, description="Password to check"),
+    _: None = Depends(require_admin_token),
+):
+    return await check_password(password)
+
 
 @app.get("/api/ratelimit")
 async def api_ratelimit_status(_: None = Depends(require_admin_token)):
