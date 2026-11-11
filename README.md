@@ -20,6 +20,7 @@
 | **Email Headers** | Parse raw headers, extract IPs/domains, check SPF/DKIM/DMARC |
 | **Link Checker** | VirusTotal, AbuseIPDB, OTX AlienVault, ip-api, local analysis |
 | **Phone Check** | Scrape Tellows, NieNaDzwoń, JakiToNumer for scam reports |
+| **Breach Check** | Check password against HIBP k-anonymity (no account needed) |
 | **Abuse Report** | Generate abuse reports for hosting/domain/ISP/Cloudflare |
 | **Blacklist** | Maintain local blacklist of IPs, domains, emails, phones |
 | **History** | SQLite-backed scan history with stats |
